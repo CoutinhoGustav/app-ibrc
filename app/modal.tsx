@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Calendar, CheckSquare, Save, Square, Trash2, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StatusBar,
   Text,
@@ -31,7 +30,7 @@ const parseDateBR = (date: string) => {
   return new Date(Number(y), Number(m) - 1, Number(d));
 };
 
-/* ================= TURMAS PERMITIDAS ================= */
+/* ================= TURMAS ================= */
 const TURMAS_PERMITIDAS = [
   'Berçário', 'Maternal', 'Principiantes', 'Juniores',
   'Intermediários', 'Jovens', 'Adultos',
@@ -51,11 +50,17 @@ export default function ModalScreen() {
   const [visitantes, setVisitantes] = useState('');
   const [alunosPresentes, setAlunosPresentes] = useState<string[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [errors, setErrors] = useState({ turma: false, professor: false, data: false });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const [errors, setErrors] = useState({
+    turma: false,
+    professor: false,
+    data: false,
+  });
 
   const alunosDaTurma = turma ? alunosData[turma] || [] : [];
 
-  /* ================= LOAD REGISTRO ================= */
+  /* ================= LOAD ================= */
   useEffect(() => {
     if (id) {
       const reg = registros.find(r => r.id.toString() === id);
@@ -64,6 +69,7 @@ export default function ModalScreen() {
         setProfessor(reg.professor);
         setData(parseDateBR(reg.data));
         setVisitantes(reg.visitantes === '-' ? '' : reg.visitantes);
+
         const alunos = alunosData[reg.turma] || [];
         setAlunosPresentes(alunos.slice(0, reg.presentes));
       }
@@ -77,7 +83,9 @@ export default function ModalScreen() {
   /* ================= HANDLERS ================= */
   const toggleAlunoPresenca = (aluno: string) => {
     setAlunosPresentes(prev =>
-      prev.includes(aluno) ? prev.filter(a => a !== aluno) : [...prev, aluno]
+      prev.includes(aluno)
+        ? prev.filter(a => a !== aluno)
+        : [...prev, aluno]
     );
   };
 
@@ -86,18 +94,19 @@ export default function ModalScreen() {
     if (selectedDate) setData(selectedDate);
   };
 
-  const clearError = (field: 'turma' | 'professor' | 'data') => {
+  const clearError = (field: keyof typeof errors) => {
     setErrors(prev => ({ ...prev, [field]: false }));
   };
 
   const handleSave = () => {
-    const newErrors = { turma: !turma, professor: !professor, data: !data };
+    const newErrors = {
+      turma: !turma,
+      professor: !professor,
+      data: !data,
+    };
     setErrors(newErrors);
 
-    if (newErrors.turma || newErrors.professor || newErrors.data) {
-      Alert.alert('Erro', 'Preencha os campos obrigatórios');
-      return;
-    }
+    if (newErrors.turma || newErrors.professor || newErrors.data) return;
 
     const payload = {
       turma,
@@ -115,28 +124,20 @@ export default function ModalScreen() {
   };
 
   const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
     if (!id) return;
-    Alert.alert(
-      'Confirmar exclusão',
-      'Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: () => {
-            removeRegistro(Number(id));
-            router.back();
-          },
-        },
-      ]
-    );
+    removeRegistro(Number(id));
+    setShowDeleteModal(false);
+    router.back();
   };
 
   /* ================= UI ================= */
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <SafeAreaView className="flex-1 bg-white">
+      <StatusBar barStyle="dark-content" />
 
       {/* HEADER */}
       <View className="border-b border-gray-200 px-4 py-3 flex-row justify-between items-center">
@@ -151,72 +152,72 @@ export default function ModalScreen() {
       <ScrollView className="flex-1">
         <View className="p-4 gap-4">
 
-          {/* TURMA */}
           <Select
             label="Turma *"
             placeholder="Selecione"
             value={turma}
             options={turmaOptions}
-            onValueChange={v => { setTurma(v); clearError('turma'); }}
+            onValueChange={v => {
+              setTurma(v);
+              clearError('turma');
+            }}
             error={errors.turma ? 'Campo obrigatório' : undefined}
-            containerClassName="rounded-lg" // opcional
           />
 
-
-
-          {/* PROFESSOR */}
           <Input
             label="Professor *"
             value={professor}
-            onChangeText={t => { setProfessor(t); clearError('professor'); }}
-            className={`border rounded-lg px-4 py-3 ${errors.professor ? 'border-red-500' : 'border-gray-300'}`}
+            onChangeText={t => {
+              setProfessor(t);
+              clearError('professor');
+            }}
             error={errors.professor ? 'Campo obrigatório' : undefined}
           />
 
-
-
-
-          {/* DATA */}
           <View>
             <Text className="text-sm mb-1">Data *</Text>
             <TouchableOpacity
-              onPress={() => { setShowDatePicker(true); clearError('data'); }}
-              className={`flex-row items-center border rounded-lg px-4 py-3 ${errors.data ? 'border-red-500' : 'border-gray-300'}`}
+              onPress={() => {
+                setShowDatePicker(true);
+                clearError('data');
+              }}
+              className={`flex-row items-center border rounded-lg px-4 py-3 ${errors.data ? 'border-red-500' : 'border-gray-300'
+                }`}
             >
               <Calendar size={18} color="#6b7280" />
-              <Text className="ml-3">{data.toLocaleDateString('pt-BR')}</Text>
+              <Text className="ml-3">
+                {data.toLocaleDateString('pt-BR')}
+              </Text>
             </TouchableOpacity>
-            {errors.data && <Text className="text-red-500 text-sm mt-1">Campo obrigatório</Text>}
           </View>
 
           {showDatePicker && (
             <DateTimePicker
               value={data}
               mode="date"
-              display="default"
               onChange={onDateChange}
             />
           )}
 
-          {/* PRESENÇA */}
           {turma && alunosDaTurma.length > 0 && (
             <Card className="p-4">
               <Text className="font-semibold mb-3">
                 Presença ({alunosPresentes.length}/{alunosDaTurma.length})
               </Text>
+
               {alunosDaTurma.map((aluno, i) => {
                 const ativo = alunosPresentes.includes(aluno);
                 return (
                   <TouchableOpacity
                     key={i}
                     onPress={() => toggleAlunoPresenca(aluno)}
-                    className={`flex-row items-center p-3 mb-2 rounded-lg ${ativo ? 'bg-blue-50' : 'bg-gray-100'}`}
+                    className={`flex-row items-center p-3 mb-2 rounded-lg ${ativo ? 'bg-blue-50' : 'bg-gray-100'
+                      }`}
                   >
-                    {ativo ? (
-                      <CheckSquare size={22} color="#2563eb" />
-                    ) : (
-                      <Square size={22} color="#9ca3af" />
-                    )}
+                    {ativo
+                      ? <CheckSquare size={22} color="#2563eb" />
+                      : <Square size={22} color="#9ca3af" />
+                    }
                     <Text className="ml-3">{aluno}</Text>
                   </TouchableOpacity>
                 );
@@ -224,19 +225,17 @@ export default function ModalScreen() {
             </Card>
           )}
 
-          {/* VISITANTES */}
           <Input
             label="Visitantes"
             value={visitantes}
             onChangeText={setVisitantes}
             multiline
-            className="border rounded-lg px-4 py-3 border-gray-300"
           />
         </View>
       </ScrollView>
 
       {/* FOOTER */}
-      <View className="border-t px-4 py-3 flex-row justify-between items-center">
+      <View className="border-t px-4 py-3 flex-row">
         {id && (
           <Button
             variant="danger"
@@ -247,14 +246,50 @@ export default function ModalScreen() {
             <Text className="text-white ml-2">Excluir</Text>
           </Button>
         )}
-        <Button
-          className={id ? 'flex-1' : ''}
-          onPress={handleSave}
-        >
+
+        <Button className="flex-1" onPress={handleSave}>
           <Save size={18} color="white" />
-          <Text className="text-white ml-2">{id ? 'Atualizar' : 'Salvar'}</Text>
+          <Text className="text-white ml-2">
+            {id ? 'Atualizar' : 'Salvar'}
+          </Text>
         </Button>
       </View>
+
+      {/* MODAL CONFIRMAÇÃO */}
+      {showDeleteModal && (
+        <View className="absolute inset-0 bg-black/50 justify-center items-center">
+          <View className="bg-white w-4/5 rounded-2xl p-5">
+            <Text className="text-lg font-bold mb-2">
+              Confirmar exclusão
+            </Text>
+
+            <Text className="text-gray-600 mb-5">
+              Tem certeza que deseja excluir este registro?
+              Essa ação não pode ser desfeita.
+            </Text>
+
+            <View className="flex-row justify-end gap-3">
+              <TouchableOpacity
+                onPress={() => setShowDeleteModal(false)}
+                className="px-4 py-2 rounded-lg bg-gray-100"
+              >
+                <Text className="font-semibold text-gray-700">
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={confirmDelete}
+                className="px-4 py-2 rounded-lg bg-red-600"
+              >
+                <Text className="font-semibold text-white">
+                  Excluir
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
