@@ -123,10 +123,6 @@ export default function ModalScreen() {
     router.back();
   };
 
-  const handleDelete = () => {
-    setShowDeleteModal(true);
-  };
-
   const confirmDelete = () => {
     if (!id) return;
     removeRegistro(Number(id));
@@ -240,7 +236,7 @@ export default function ModalScreen() {
           <Button
             variant="danger"
             className="flex-1 mr-2"
-            onPress={handleDelete}
+            onPress={() => setShowDeleteModal(true)}
           >
             <Trash2 size={18} color="white" />
             <Text className="text-white ml-2">Excluir</Text>
@@ -263,15 +259,16 @@ export default function ModalScreen() {
               Confirmar exclusão
             </Text>
 
-            <Text className="text-gray-600 mb-5">
+            <Text className="text-gray-600 mb-6">
               Tem certeza que deseja excluir este registro?
               Essa ação não pode ser desfeita.
             </Text>
 
-            <View className="flex-row justify-end gap-3">
+            {/* BOTÕES CENTRALIZADOS */}
+            <View className="flex-row justify-center gap-4">
               <TouchableOpacity
                 onPress={() => setShowDeleteModal(false)}
-                className="px-4 py-2 rounded-lg bg-gray-100"
+                className="px-6 py-2 rounded-lg bg-gray-100 min-w-[110px] items-center"
               >
                 <Text className="font-semibold text-gray-700">
                   Cancelar
@@ -280,7 +277,7 @@ export default function ModalScreen() {
 
               <TouchableOpacity
                 onPress={confirmDelete}
-                className="px-4 py-2 rounded-lg bg-red-600"
+                className="px-6 py-2 rounded-lg bg-red-600 min-w-[110px] items-center"
               >
                 <Text className="font-semibold text-white">
                   Excluir

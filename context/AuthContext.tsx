@@ -1,28 +1,53 @@
-// context/AuthContext.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+} from 'react';
 
-interface User {
+/* =========================
+   TIPOS
+========================= */
+
+export interface User {
     name: string;
     email: string;
-    avatar: string;
+    avatar?: string;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
     user: User | null;
     login: (email: string, password: string) => Promise<boolean>;
     logout: () => Promise<void>;
-    updateUser: (newData: Partial<User>) => void;
-    deleteAccount: () => Promise<void>; // ✅ adiciona aqui
+    updateUser: (newData: Partial<User>) => Promise<void>;
+    updateAvatar: (uri: string) => Promise<void>; // 👈 PARA FOTO
+    deleteAccount: () => Promise<void>;
     loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+/* =========================
+   CONTEXT
+========================= */
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const AuthContext = createContext<AuthContextType | undefined>(
+    undefined
+);
+
+/* =========================
+   PROVIDER
+========================= */
+
+export const AuthProvider: React.FC<{
+    children: React.ReactNode;
+}> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+
+    /* =========================
+       LOAD USER
+    ========================= */
 
     useEffect(() => {
         async function loadUser() {
@@ -37,22 +62,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setLoading(false);
             }
         }
+
         loadUser();
     }, []);
 
+    /* =========================
+       LOGIN
+    ========================= */
+
     const login = async (email: string, password: string) => {
+        // 🔒 EXEMPLO MOCK
         if (email === 'admin@ibrc.com.br' && password === '123456') {
             const userData: User = {
                 name: 'Admin IBRC',
                 email,
                 avatar: 'https://ui-avatars.com/api/?name=Admin+IBRC',
             };
+
             await AsyncStorage.setItem('@user', JSON.stringify(userData));
             setUser(userData);
+
             return true;
         }
+
         return false;
     };
+
+    /* =========================
+       LOGOUT
+    ========================= */
 
     const logout = async () => {
         await AsyncStorage.removeItem('@user');
@@ -60,28 +98,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         router.replace('/login');
     };
 
-    const updateUser = (newData: Partial<User>) => {
+    /* =========================
+       UPDATE USER (GENÉRICO)
+    ========================= */
+
+    const updateUser = async (newData: Partial<User>) => {
         setUser(prev => {
             if (!prev) return null;
+
             const updatedUser = { ...prev, ...newData };
             AsyncStorage.setItem('@user', JSON.stringify(updatedUser));
+
             return updatedUser;
         });
     };
 
+    /* =========================
+       UPDATE AVATAR (ATALHO)
+    ========================= */
+
+    const updateAvatar = async (uri: string) => {
+        await updateUser({ avatar: uri });
+    };
+
+    /* =========================
+       DELETE ACCOUNT
+    ========================= */
+
     const deleteAccount = async () => {
-        // Aqui você pode adicionar lógica extra de exclusão no backend se quiser
         await AsyncStorage.removeItem('@user');
         setUser(null);
         router.replace('/login');
     };
 
+    /* =========================
+       PROVIDER
+    ========================= */
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, updateUser, deleteAccount, loading }}>
+        <AuthContext.Provider
+            value={{
+                user,
+                login,
+                logout,
+                updateUser,
+                updateAvatar,
+                deleteAccount,
+                loading,
+            }}
+        >
             {!loading && children}
         </AuthContext.Provider>
     );
 };
+
+/* =========================
+   HOOK
+========================= */
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
