@@ -36,10 +36,7 @@ export default function TurmasScreen() {
     const [turmaModal, setTurmaModal] = useState<string | null>(null);
 
     const [novoAluno, setNovoAluno] = useState('');
-    const [alunoEditando, setAlunoEditando] = useState<{
-        index: number;
-        nome: string;
-    } | null>(null);
+    const [alunoEditando, setAlunoEditando] = useState<{ index: number; nome: string } | null>(null);
 
     // ===== MODAL EXCLUSÃO =====
     const [confirmVisible, setConfirmVisible] = useState(false);
@@ -48,6 +45,11 @@ export default function TurmasScreen() {
     // ===== MODAL FEEDBACK =====
     const [loadingVisible, setLoadingVisible] = useState(false);
     const [successVisible, setSuccessVisible] = useState(false);
+
+    // ===== MENU / RELATÓRIO =====
+    const [menuAtivo, setMenuAtivo] = useState<'classes' | 'relatorio'>('classes');
+    const [relatorioVisible, setRelatorioVisible] = useState(false);
+    const [tipoRelatorio, setTipoRelatorio] = useState<'classes' | 'geral'>('classes');
 
     const TURMAS_PERMITIDAS = [
         'Berçário',
@@ -65,7 +67,7 @@ export default function TurmasScreen() {
             const record = registros.find(r => r.turma === turma);
             return {
                 name: turma,
-                professor: record ? record.professor : 'Não atribuído',
+                professor: record ? (record.professor || 'Não atribuído') : 'Não atribuído',
                 totalAlunos: alunosData[turma].length
             };
         });
@@ -80,7 +82,6 @@ export default function TurmasScreen() {
     const salvarAluno = () => {
         if (!turmaModal || !novoAluno.trim()) return;
 
-        // EDITAR
         if (alunoEditando) {
             updateAluno(turmaModal, alunoEditando.index, novoAluno);
             setNovoAluno('');
@@ -88,19 +89,13 @@ export default function TurmasScreen() {
             return;
         }
 
-        // ADICIONAR COM FEEDBACK
         setLoadingVisible(true);
-
         setTimeout(() => {
             addAluno(turmaModal, novoAluno);
-
             setLoadingVisible(false);
             setSuccessVisible(true);
             setNovoAluno('');
-
-            setTimeout(() => {
-                setSuccessVisible(false);
-            }, 1500);
+            setTimeout(() => setSuccessVisible(false), 1500);
         }, 800);
     };
 
@@ -160,15 +155,75 @@ export default function TurmasScreen() {
         </Card>
     );
 
+    // ===== CALCULO RELATORIO =====
+    const calcularRelatorio = () => {
+        let totalPresentes = 0;
+        let totalAusentes = 0;
+        let totalVisitantes = 0;
+
+        const porTurma = turmas.map(turma => {
+            const registro = registros.find(r => r.turma === turma.name);
+
+            const presentes = Number((registro as any)?.presentes) || 0;
+            const ausentes = Number((registro as any)?.ausentes) || 0;
+            const visitantes = Number((registro as any)?.visitantes) || 0;
+
+            totalPresentes += presentes;
+            totalAusentes += ausentes;
+            totalVisitantes += visitantes;
+
+            return {
+                turma: turma.name,
+                presentes,
+                ausentes,
+                visitantes,
+                total: presentes + visitantes
+            };
+        });
+
+        return {
+            porTurma,
+            geral: {
+                presentes: totalPresentes,
+                ausentes: totalAusentes,
+                visitantes: totalVisitantes,
+                total: totalPresentes + totalVisitantes
+            }
+        };
+    };
+
+    const relatorio = calcularRelatorio();
+
     return (
         <SafeAreaView className="flex-1 bg-gray-50">
+            {/* HEADER + MENU */}
             <View className="bg-white px-4 py-3 border-b">
                 <Text className="text-xl font-black">Turmas</Text>
                 <Text className="text-xs text-gray-500">
                     Gerenciamento de classes
                 </Text>
+
+                <View className="flex-row mt-3 gap-2">
+                    <TouchableOpacity
+                        onPress={() => setMenuAtivo('classes')}
+                        className={`flex-1 py-2 rounded-lg items-center ${menuAtivo === 'classes' ? 'bg-blue-600' : 'bg-gray-100'
+                            }`}
+                    >
+                        <Text className={menuAtivo === 'classes' ? 'text-white font-bold' : 'text-gray-700'}>
+                            Classes
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => { setMenuAtivo('relatorio'); setRelatorioVisible(true); }}
+                        className="flex-1 py-2 rounded-lg items-center bg-gray-100"
+                    >
+                        <Text className="text-gray-700 font-bold">Relatório</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
+            {/* LISTA TURMAS */}
             <FlatList
                 data={turmas}
                 renderItem={renderTurmaItem}
@@ -176,7 +231,7 @@ export default function TurmasScreen() {
                 contentContainerStyle={{ padding: 12 }}
             />
 
-            {/* ===== MODAL GERENCIAR ===== */}
+            {/* MODAL GERENCIAR */}
             <Modal visible={modalVisible} animationType="slide" transparent>
                 <View className="flex-1 bg-black/40 justify-end">
                     <View className="bg-white rounded-t-2xl p-4 max-h-[95%]">
@@ -234,7 +289,70 @@ export default function TurmasScreen() {
                 </View>
             </Modal>
 
-            {/* ===== MODAL LOADING ===== */}
+            {/* MODAL RELATORIO */}
+            <Modal visible={relatorioVisible} animationType="slide" transparent>
+                <View className="flex-1 bg-black/40 justify-end">
+                    <View className="bg-white rounded-t-2xl p-4 max-h-[90%]">
+                        <View className="flex-row justify-between items-center mb-4">
+                            <Text className="text-lg font-bold">Relatório</Text>
+                            <TouchableOpacity onPress={() => setRelatorioVisible(false)}>
+                                <X size={22} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View className="flex-row gap-2 mb-4">
+                            <TouchableOpacity
+                                onPress={() => setTipoRelatorio('classes')}
+                                className={`flex-1 py-2 rounded-lg items-center ${tipoRelatorio === 'classes' ? 'bg-blue-600' : 'bg-gray-100'
+                                    }`}
+                            >
+                                <Text className={tipoRelatorio === 'classes' ? 'text-white' : 'text-gray-700'}>
+                                    Classes
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => setTipoRelatorio('geral')}
+                                className={`flex-1 py-2 rounded-lg items-center ${tipoRelatorio === 'geral' ? 'bg-blue-600' : 'bg-gray-100'
+                                    }`}
+                            >
+                                <Text className={tipoRelatorio === 'geral' ? 'text-white' : 'text-gray-700'}>
+                                    Geral
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {tipoRelatorio === 'classes' ? (
+                            <FlatList
+                                data={relatorio.porTurma}
+                                keyExtractor={item => item.turma}
+                                renderItem={({ item }) => (
+                                    <Card className="mb-3 p-3">
+                                        <Text className="font-bold mb-2">{item.turma}</Text>
+                                        <Text>Presentes: {item.presentes}</Text>
+                                        <Text>Ausentes: {item.ausentes}</Text>
+                                        <Text>Visitantes: {item.visitantes}</Text>
+                                        <Text className="font-bold mt-1">
+                                            Total: {item.total}
+                                        </Text>
+                                    </Card>
+                                )}
+                            />
+                        ) : (
+                            <Card className="p-4">
+                                <Text>Presentes: {relatorio.geral.presentes}</Text>
+                                <Text>Ausentes: {relatorio.geral.ausentes}</Text>
+                                <Text>Visitantes: {relatorio.geral.visitantes}</Text>
+                                <Text className="font-bold mt-2">
+                                    Total: {relatorio.geral.total}
+                                </Text>
+                            </Card>
+                        )}
+                    </View>
+                </View>
+            </Modal>
+
+            {/* MODAL LOADING */}
             <Modal visible={loadingVisible} transparent animationType="fade">
                 <View className="flex-1 bg-black/50 items-center justify-center">
                     <View className="bg-white rounded-2xl p-6 items-center w-4/5">
@@ -246,7 +364,7 @@ export default function TurmasScreen() {
                 </View>
             </Modal>
 
-            {/* ===== MODAL SUCESSO ===== */}
+            {/* MODAL SUCESSO */}
             <Modal visible={successVisible} transparent animationType="fade">
                 <View className="flex-1 bg-black/50 items-center justify-center">
                     <View className="bg-white rounded-2xl p-6 items-center w-4/5">
@@ -261,7 +379,7 @@ export default function TurmasScreen() {
                 </View>
             </Modal>
 
-            {/* ===== MODAL EXCLUSÃO ===== */}
+            {/* MODAL EXCLUSÃO */}
             <Modal visible={confirmVisible} transparent animationType="fade">
                 <View className="flex-1 bg-black/50 justify-center px-6">
                     <View className="bg-white rounded-2xl p-5">
