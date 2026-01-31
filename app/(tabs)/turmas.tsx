@@ -41,13 +41,14 @@ export default function TurmasScreen() {
         nome: string;
     } | null>(null);
 
-    // ===== MODAL EXCLUSÃO =====
+    // ===== EXCLUSÃO =====
     const [confirmVisible, setConfirmVisible] = useState(false);
     const [alunoParaExcluir, setAlunoParaExcluir] = useState<number | null>(null);
 
-    // ===== MODAL FEEDBACK =====
+    // ===== FEEDBACK =====
     const [loadingVisible, setLoadingVisible] = useState(false);
     const [successVisible, setSuccessVisible] = useState(false);
+    const [acaoAtual, setAcaoAtual] = useState<'add' | 'delete'>('add');
 
     const TURMAS_PERMITIDAS = [
         'Berçário',
@@ -80,7 +81,6 @@ export default function TurmasScreen() {
     const salvarAluno = () => {
         if (!turmaModal || !novoAluno.trim()) return;
 
-        // EDITAR
         if (alunoEditando) {
             updateAluno(turmaModal, alunoEditando.index, novoAluno);
             setNovoAluno('');
@@ -88,7 +88,7 @@ export default function TurmasScreen() {
             return;
         }
 
-        // ADICIONAR COM FEEDBACK
+        setAcaoAtual('add');
         setLoadingVisible(true);
 
         setTimeout(() => {
@@ -98,67 +98,9 @@ export default function TurmasScreen() {
             setSuccessVisible(true);
             setNovoAluno('');
 
-            setTimeout(() => {
-                setSuccessVisible(false);
-            }, 1500);
+            setTimeout(() => setSuccessVisible(false), 1500);
         }, 800);
     };
-
-    const renderTurmaItem = ({ item }: any) => (
-        <Card className="mb-3">
-            <TouchableOpacity
-                onPress={() =>
-                    setSelectedTurma(item.name === selectedTurma ? null : item.name)
-                }
-            >
-                <View className="flex-row items-center justify-between p-3">
-                    <View className="flex-row items-center">
-                        <View className="w-10 h-10 bg-blue-100 rounded-xl items-center justify-center mr-3">
-                            <GraduationCap size={20} color="#2563eb" />
-                        </View>
-                        <View>
-                            <Text className="font-bold">{item.name}</Text>
-                            <Text className="text-xs text-gray-500">
-                                Prof. {item.professor}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <ChevronRight
-                        size={18}
-                        color="#9ca3af"
-                        style={{
-                            transform: [{ rotate: selectedTurma === item.name ? '90deg' : '0deg' }]
-                        }}
-                    />
-                </View>
-
-                {selectedTurma === item.name && (
-                    <View className="px-3 pb-3 pt-2 border-t border-gray-100">
-                        <Text className="text-xs font-bold mb-2">
-                            Alunos ({item.totalAlunos})
-                        </Text>
-
-                        <View className="flex-row flex-wrap gap-2">
-                            {alunosData[item.name].map((aluno, index) => (
-                                <View key={index} className="bg-gray-100 px-2 py-1 rounded-full">
-                                    <Text className="text-xs">{aluno}</Text>
-                                </View>
-                            ))}
-                        </View>
-
-                        <Button
-                            variant="outline"
-                            className="mt-4 h-12"
-                            onPress={() => abrirModal(item.name)}
-                        >
-                            Gerenciar Alunos
-                        </Button>
-                    </View>
-                )}
-            </TouchableOpacity>
-        </Card>
-    );
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50">
@@ -171,12 +113,66 @@ export default function TurmasScreen() {
 
             <FlatList
                 data={turmas}
-                renderItem={renderTurmaItem}
                 keyExtractor={item => item.name}
                 contentContainerStyle={{ padding: 12 }}
+                renderItem={({ item }) => (
+                    <Card className="mb-3">
+                        <TouchableOpacity
+                            onPress={() =>
+                                setSelectedTurma(item.name === selectedTurma ? null : item.name)
+                            }
+                        >
+                            <View className="flex-row justify-between items-center p-3">
+                                <View className="flex-row items-center">
+                                    <View className="w-10 h-10 bg-blue-100 rounded-xl items-center justify-center mr-3">
+                                        <GraduationCap size={20} color="#2563eb" />
+                                    </View>
+                                    <View>
+                                        <Text className="font-bold">{item.name}</Text>
+                                        <Text className="text-xs text-gray-500">
+                                            Prof. {item.professor}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                <ChevronRight
+                                    size={18}
+                                    color="#9ca3af"
+                                    style={{
+                                        transform: [{ rotate: selectedTurma === item.name ? '90deg' : '0deg' }]
+                                    }}
+                                />
+                            </View>
+
+                            {selectedTurma === item.name && (
+                                <View className="px-3 pb-3 pt-2 border-t border-gray-100">
+                                    <Text className="text-xs font-bold mb-2">
+                                        Alunos ({item.totalAlunos})
+                                    </Text>
+
+                                    <View className="flex-row flex-wrap gap-2">
+                                        {alunosData[item.name].map((aluno, index) => (
+                                            <View key={index} className="bg-gray-100 px-2 py-1 rounded-full">
+                                                <Text className="text-xs">{aluno}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+
+                                    <Button
+                                        variant="outline"
+                                        className="mt-4 h-12"
+                                        onPress={() => abrirModal(item.name)}
+                                    >
+                                        Gerenciar Alunos
+                                    </Button>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </Card>
+                )}
             />
 
-            {/* ===== MODAL GERENCIAR ===== */}
+            {/* MODAL GERENCIAR */}
             <Modal visible={modalVisible} animationType="slide" transparent>
                 <View className="flex-1 bg-black/40 justify-end">
                     <View className="bg-white rounded-t-2xl p-4 max-h-[95%]">
@@ -234,34 +230,36 @@ export default function TurmasScreen() {
                 </View>
             </Modal>
 
-            {/* ===== MODAL LOADING ===== */}
+            {/* LOADING */}
             <Modal visible={loadingVisible} transparent animationType="fade">
                 <View className="flex-1 bg-black/50 items-center justify-center">
                     <View className="bg-white rounded-2xl p-6 items-center w-4/5">
                         <ActivityIndicator size="large" color="#2563eb" />
                         <Text className="mt-4 font-semibold">
-                            Registrando aluno...
+                            {acaoAtual === 'add'
+                                ? 'Registrando aluno...'
+                                : 'Excluindo aluno...'}
                         </Text>
                     </View>
                 </View>
             </Modal>
 
-            {/* ===== MODAL SUCESSO ===== */}
+            {/* SUCESSO */}
             <Modal visible={successVisible} transparent animationType="fade">
                 <View className="flex-1 bg-black/50 items-center justify-center">
                     <View className="bg-white rounded-2xl p-6 items-center w-4/5">
                         <CheckCircle size={48} color="#16a34a" />
-                        <Text className="text-lg font-bold mt-3">
-                            Sucesso!
-                        </Text>
-                        <Text className="text-sm text-gray-600 mt-1">
-                            Aluno registrado com sucesso
+                        <Text className="text-lg font-bold mt-3">Sucesso!</Text>
+                        <Text className="text-sm text-gray-600 mt-1 text-center">
+                            {acaoAtual === 'add'
+                                ? 'Aluno registrado com sucesso'
+                                : 'Aluno excluído com sucesso'}
                         </Text>
                     </View>
                 </View>
             </Modal>
 
-            {/* ===== MODAL EXCLUSÃO ===== */}
+            {/* CONFIRMAÇÃO EXCLUSÃO */}
             <Modal visible={confirmVisible} transparent animationType="fade">
                 <View className="flex-1 bg-black/50 justify-center px-6">
                     <View className="bg-white rounded-2xl p-5">
@@ -283,10 +281,22 @@ export default function TurmasScreen() {
 
                             <TouchableOpacity
                                 onPress={() => {
-                                    if (turmaModal && alunoParaExcluir !== null) {
-                                        removeAluno(turmaModal, alunoParaExcluir);
-                                    }
+                                    if (!turmaModal || alunoParaExcluir === null) return;
+
                                     setConfirmVisible(false);
+                                    setAcaoAtual('delete');
+                                    setLoadingVisible(true);
+
+                                    setTimeout(() => {
+                                        removeAluno(turmaModal, alunoParaExcluir);
+                                        setLoadingVisible(false);
+                                        setSuccessVisible(true);
+
+                                        setTimeout(() => {
+                                            setSuccessVisible(false);
+                                            setAlunoParaExcluir(null);
+                                        }, 1500);
+                                    }, 800);
                                 }}
                                 className="flex-1 bg-red-600 py-3 rounded-lg items-center"
                             >
