@@ -44,6 +44,7 @@ export default function TurmasScreen() {
     // ===== EXCLUSÃO =====
     const [confirmVisible, setConfirmVisible] = useState(false);
     const [alunoParaExcluir, setAlunoParaExcluir] = useState<number | null>(null);
+    const [nomeAlunoExcluir, setNomeAlunoExcluir] = useState<string | null>(null);
 
     // ===== FEEDBACK =====
     const [loadingVisible, setLoadingVisible] = useState(false);
@@ -93,7 +94,6 @@ export default function TurmasScreen() {
 
         setTimeout(() => {
             addAluno(turmaModal, novoAluno);
-
             setLoadingVisible(false);
             setSuccessVisible(true);
             setNovoAluno('');
@@ -139,7 +139,9 @@ export default function TurmasScreen() {
                                     size={18}
                                     color="#9ca3af"
                                     style={{
-                                        transform: [{ rotate: selectedTurma === item.name ? '90deg' : '0deg' }]
+                                        transform: [
+                                            { rotate: selectedTurma === item.name ? '90deg' : '0deg' }
+                                        ]
                                     }}
                                 />
                             </View>
@@ -152,7 +154,10 @@ export default function TurmasScreen() {
 
                                     <View className="flex-row flex-wrap gap-2">
                                         {alunosData[item.name].map((aluno, index) => (
-                                            <View key={index} className="bg-gray-100 px-2 py-1 rounded-full">
+                                            <View
+                                                key={index}
+                                                className="bg-gray-100 px-2 py-1 rounded-full"
+                                            >
                                                 <Text className="text-xs">{aluno}</Text>
                                             </View>
                                         ))}
@@ -217,6 +222,7 @@ export default function TurmasScreen() {
                                         <TouchableOpacity
                                             onPress={() => {
                                                 setAlunoParaExcluir(index);
+                                                setNomeAlunoExcluir(item);
                                                 setConfirmVisible(true);
                                             }}
                                         >
@@ -267,13 +273,22 @@ export default function TurmasScreen() {
                             Confirmar exclusão
                         </Text>
 
-                        <Text className="text-sm text-gray-600 mb-6">
-                            Deseja excluir este aluno?
+                        <Text className="text-sm text-gray-600 mb-4">
+                            Deseja excluir o aluno:
                         </Text>
+
+                        <View className="bg-gray-100 px-3 py-2 rounded-lg mb-6">
+                            <Text className="font-semibold text-center">
+                                {nomeAlunoExcluir}
+                            </Text>
+                        </View>
 
                         <View className="flex-row gap-3">
                             <TouchableOpacity
-                                onPress={() => setConfirmVisible(false)}
+                                onPress={() => {
+                                    setConfirmVisible(false);
+                                    setNomeAlunoExcluir(null);
+                                }}
                                 className="flex-1 bg-gray-100 py-3 rounded-lg items-center"
                             >
                                 <Text>Cancelar</Text>
@@ -295,6 +310,7 @@ export default function TurmasScreen() {
                                         setTimeout(() => {
                                             setSuccessVisible(false);
                                             setAlunoParaExcluir(null);
+                                            setNomeAlunoExcluir(null);
                                         }, 1500);
                                     }, 800);
                                 }}
