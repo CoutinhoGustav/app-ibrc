@@ -14,6 +14,7 @@ import {
   Animated,
   Easing,
   Platform,
+  Pressable,
   ScrollView,
   StatusBar,
   Text,
@@ -56,6 +57,7 @@ const TURMAS_PERMITIDAS = [
 export default function ModalScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const idParam = Array.isArray(id) ? id[0] : id;
   const { registros, addRegistro, updateRegistro, removeRegistro, alunosData } =
     useData();
 
@@ -73,6 +75,8 @@ export default function ModalScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Estado do calendário web (fallback)
   const [webMonth, setWebMonth] = useState(data.getMonth());
@@ -89,8 +93,8 @@ export default function ModalScreen() {
 
   /* ================= LOAD ================= */
   useEffect(() => {
-    if (id) {
-      const reg = registros.find((r) => r.id.toString() === id);
+    if (idParam) {
+      const reg = registros.find((r) => r.id.toString() === idParam);
       if (reg) {
         setTurma(reg.turma);
         setProfessor(reg.professor);
@@ -101,11 +105,11 @@ export default function ModalScreen() {
         setAlunosPresentes(alunos.slice(0, reg.presentes));
       }
     }
-  }, [id, registros, alunosData]);
+  }, [idParam, registros, alunosData]);
 
   useEffect(() => {
-    if (turma && !id) setAlunosPresentes([]);
-  }, [turma, id]);
+    if (turma && !idParam) setAlunosPresentes([]);
+  }, [turma, idParam]);
 
   /* ================= HANDLERS ================= */
   const toggleAlunoPresenca = (aluno: string) => {
@@ -160,7 +164,7 @@ export default function ModalScreen() {
 
     setIsSaving(true);
     try {
-      if (id) await updateRegistro({ ...payload, id: Number(id) });
+      if (idParam) await updateRegistro({ ...payload, id: idParam as any });
       else await addRegistro(payload);
 
       // Mostra tela de sucesso
@@ -178,18 +182,35 @@ export default function ModalScreen() {
   };
 
   const confirmDelete = async () => {
-    if (!id) return;
+    if (!idParam) {
+      setDeleteError("ID inválido para exclusão");
+      return;
+    }
+
+    if (isDeleting) return; // evita múltiplos envios
+
+    setDeleteError(null);
     setIsDeleting(true);
     try {
-      await removeRegistro(Number(id));
+      // Passa o id (string ou number) para o contexto que lida com a chamada ao backend
+      await removeRegistro(idParam);
+
+      // sucesso: fecha modal e mostra overlay de confirmação
       setShowDeleteModal(false);
-      // Pequeno delay para UX e depois volta
-      setTimeout(() => router.back(), 600);
-    } catch (err) {
-      console.error("Erro ao excluir registro:", err);
-      setShowDeleteModal(false);
-    } finally {
       setIsDeleting(false);
+      setIsDeleted(true);
+
+      // Limpa possíveis estados locais relacionados ao registro atual
+
+      setTimeout(() => {
+        setIsDeleted(false);
+        router.back();
+      }, 900);
+    } catch (err: any) {
+      console.error("Erro ao excluir registro:", err);
+      setDeleteError(err?.message || "Erro ao excluir registro");
+      setIsDeleting(false);
+      // mantém a modal aberta para que o usuário possa tentar novamente
     }
   };
 
@@ -237,7 +258,7 @@ export default function ModalScreen() {
       {/* HEADER */}
       <View className="border-b border-gray-200 px-4 py-3 flex-row justify-between items-center">
         <Text className="font-semibold text-gray-800">
-          {id ? "Editar Registro" : "Novo Registro"}
+          {idParam ? "Editar Registro" : "Novo Registro"}
         </Text>
         <TouchableOpacity onPress={router.back}>
           <X size={18} color="#2563eb" />
@@ -341,7 +362,7 @@ export default function ModalScreen() {
 
       {/* FOOTER */}
       <View className="border-t px-4 py-3 flex-row">
-        {id && (
+        {idParam && (
           <Button
             variant="danger"
             className="flex-1 mr-2"
@@ -359,42 +380,58 @@ export default function ModalScreen() {
           disabled={isSaving || isSaved}
         >
           {!isSaving && <Save size={18} color="white" />}
-          <Text className="text-white ml-2">{id ? "Atualizar" : "Salvar"}</Text>
+          <Text className="text-white ml-2">
+            {idParam ? "Atualizar" : "Salvar"}
+          </Text>
         </Button>
       </View>
 
       {/* MODAL CONFIRMAÇÃO */}
       {showDeleteModal && (
-        <View className="absolute inset-0 bg-black/50 justify-center items-center">
-          <View className="bg-white w-4/5 rounded-2xl p-5">
-            <Text className="text-lg font-bold mb-2">Confirmar exclusão</Text>
+        <Pressable
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+          onPress={() => !isDeleting && setShowDeleteModal(false)}
+        >
+          <View className="absolute inset-0 bg-black/50 justify-center items-center">
+            <View
+              onStartShouldSetResponder={() => true}
+              className="bg-white w-4/5 rounded-2xl p-5"
+            >
+              <Text className="text-lg font-bold mb-2">Confirmar exclusão</Text>
 
-            <Text className="text-gray-600 mb-6">
-              Tem certeza que deseja excluir este registro? Essa ação não pode
-              ser desfeita.
-            </Text>
+              <Text className="text-gray-600 mb-3">
+                Tem certeza que deseja excluir este registro? Essa ação não pode
+                ser desfeita.
+              </Text>
 
-            {/* BOTÕES CENTRALIZADOS */}
-            <View className="flex-row justify-center gap-4">
-              <Button
-                variant="secondary"
-                className="min-w-[110px]"
-                onPress={() => setShowDeleteModal(false)}
-              >
-                Cancelar
-              </Button>
+              {deleteError && (
+                <Text className="text-red-500 mb-3 text-center">
+                  {deleteError}
+                </Text>
+              )}
 
-              <Button
-                variant="danger"
-                className="min-w-[110px]"
-                loading={isDeleting}
-                onPress={confirmDelete}
-              >
-                Excluir
-              </Button>
+              {/* BOTÕES CENTRALIZADOS */}
+              <View className="flex-row justify-center gap-4">
+                <Button
+                  variant="secondary"
+                  className="min-w-[110px]"
+                  onPress={() => !isDeleting && setShowDeleteModal(false)}
+                >
+                  Cancelar
+                </Button>
+
+                <Button
+                  variant="danger"
+                  className="min-w-[110px]"
+                  loading={isDeleting}
+                  onPress={confirmDelete}
+                >
+                  Excluir
+                </Button>
+              </View>
             </View>
           </View>
-        </View>
+        </Pressable>
       )}
 
       {/* OVERLAYS: SALVANDO / SUCESSO (renderizados por último para garantir prioridade) */}
@@ -416,6 +453,28 @@ export default function ModalScreen() {
             <Text className="font-semibold text-lg">
               Registro salvo com sucesso!
             </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Excluído com sucesso */}
+      {isDeleted && (
+        <View className="absolute inset-0 bg-black/50 justify-center items-center">
+          <View className="bg-white rounded-2xl p-6 items-center w-11/12 max-w-xs">
+            <View className="bg-green-100 rounded-full p-3 mb-3">
+              <CheckSquare size={36} color="#16a34a" />
+            </View>
+            <Text className="font-semibold text-lg">Registro excluído</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Deletando (overlay) */}
+      {isDeleting && (
+        <View className="absolute inset-0 bg-black/50 justify-center items-center">
+          <View className="bg-white rounded-2xl p-6 items-center w-11/12 max-w-xs">
+            <ActivityIndicator size="large" color="#ef4444" />
+            <Text className="mt-4 font-semibold">Excluindo...</Text>
           </View>
         </View>
       )}
