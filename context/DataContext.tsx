@@ -346,8 +346,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const removeRegistro = async (id: string | number) => {
     try {
-      await apiService.deleteRegistro(id as number);
-      setRegistrosISO((prev) => prev.filter((r) => r.id !== id));
+      // Aceita tanto id numérico quanto string (útil para mock ids)
+      await apiService.deleteRegistro(id as any);
+      // Faz a comparação convertendo para string para evitar problemas de tipo ("1" vs 1)
+      setRegistrosISO((prev) =>
+        prev.filter((r) => String(r.id) !== String(id)),
+      );
     } catch (err: any) {
       console.error("Erro ao deletar registro:", err);
       throw err;
