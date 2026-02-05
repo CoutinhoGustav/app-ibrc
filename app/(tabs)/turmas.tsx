@@ -7,6 +7,7 @@ import {
     Trash2,
     X
 } from 'lucide-react-native';
+import { useColorScheme } from 'nativewind';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -30,6 +31,7 @@ export default function TurmasScreen() {
         updateAluno,
         removeAluno
     } = useData();
+    const { colorScheme } = useColorScheme();
 
     const [selectedTurma, setSelectedTurma] = useState<string | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
@@ -103,10 +105,10 @@ export default function TurmasScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50">
-            <View className="bg-white px-4 py-3 border-b">
-                <Text className="text-xl font-black">Turmas</Text>
-                <Text className="text-xs text-gray-500">
+        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
+            <View className="bg-white dark:bg-slate-900 px-4 py-3 border-b border-gray-100 dark:border-slate-800">
+                <Text className="text-xl font-black text-gray-900 dark:text-white">Turmas</Text>
+                <Text className="text-xs text-gray-500 dark:text-gray-400">
                     Gerenciamento de classes
                 </Text>
             </View>
@@ -124,12 +126,12 @@ export default function TurmasScreen() {
                         >
                             <View className="flex-row justify-between items-center p-3">
                                 <View className="flex-row items-center">
-                                    <View className="w-10 h-10 bg-blue-100 rounded-xl items-center justify-center mr-3">
+                                    <View className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl items-center justify-center mr-3">
                                         <GraduationCap size={20} color="#2563eb" />
                                     </View>
                                     <View>
-                                        <Text className="font-bold">{item.name}</Text>
-                                        <Text className="text-xs text-gray-500">
+                                        <Text className="font-bold text-gray-900 dark:text-white">{item.name}</Text>
+                                        <Text className="text-xs text-gray-500 dark:text-gray-400">
                                             Prof. {item.professor}
                                         </Text>
                                     </View>
@@ -147,8 +149,8 @@ export default function TurmasScreen() {
                             </View>
 
                             {selectedTurma === item.name && (
-                                <View className="px-3 pb-3 pt-2 border-t border-gray-100">
-                                    <Text className="text-xs font-bold mb-2">
+                                <View className="px-3 pb-3 pt-2 border-t border-gray-100 dark:border-slate-800">
+                                    <Text className="text-xs font-bold mb-2 text-gray-900 dark:text-white">
                                         Alunos ({item.totalAlunos})
                                     </Text>
 
@@ -156,9 +158,9 @@ export default function TurmasScreen() {
                                         {alunosData[item.name].map((aluno, index) => (
                                             <View
                                                 key={index}
-                                                className="bg-gray-100 px-2 py-1 rounded-full"
+                                                className="bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full"
                                             >
-                                                <Text className="text-xs">{aluno}</Text>
+                                                <Text className="text-xs text-gray-700 dark:text-gray-300">{aluno}</Text>
                                             </View>
                                         ))}
                                     </View>
@@ -180,11 +182,11 @@ export default function TurmasScreen() {
             {/* MODAL GERENCIAR */}
             <Modal visible={modalVisible} animationType="slide" transparent>
                 <View className="flex-1 bg-black/40 justify-end">
-                    <View className="bg-white rounded-t-2xl p-4 max-h-[95%]">
+                    <View className="bg-white dark:bg-slate-900 rounded-t-2xl p-4 max-h-[95%]">
                         <View className="flex-row justify-between items-center mb-3">
-                            <Text className="text-lg font-bold">Gerenciar Alunos</Text>
+                            <Text className="text-lg font-bold text-gray-900 dark:text-white">Gerenciar Alunos</Text>
                             <TouchableOpacity onPress={() => setModalVisible(false)}>
-                                <X size={22} />
+                                <X size={22} color={colorScheme === 'dark' ? '#fff' : '#000'} />
                             </TouchableOpacity>
                         </View>
 
@@ -193,7 +195,8 @@ export default function TurmasScreen() {
                                 value={novoAluno}
                                 onChangeText={setNovoAluno}
                                 placeholder="Nome do aluno"
-                                className="flex-1 border rounded-lg px-3 py-2"
+                                placeholderTextColor="#94a3b8"
+                                className="flex-1 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-slate-800"
                             />
                             <TouchableOpacity
                                 onPress={salvarAluno}
@@ -207,8 +210,8 @@ export default function TurmasScreen() {
                             data={turmaModal ? alunosData[turmaModal] : []}
                             keyExtractor={(_, i) => i.toString()}
                             renderItem={({ item, index }) => (
-                                <View className="flex-row justify-between py-2 border-b">
-                                    <Text>{item}</Text>
+                                <View className="flex-row justify-between py-2 border-b border-gray-50 dark:border-slate-800">
+                                    <Text className="text-gray-900 dark:text-white">{item}</Text>
                                     <View className="flex-row gap-4">
                                         <TouchableOpacity
                                             onPress={() => {
@@ -241,7 +244,7 @@ export default function TurmasScreen() {
                 <View className="flex-1 bg-black/50 items-center justify-center">
                     <View className="bg-white rounded-2xl p-6 items-center w-4/5">
                         <ActivityIndicator size="large" color="#2563eb" />
-                        <Text className="mt-4 font-semibold">
+                        <Text className="mt-4 font-semibold text-gray-900 dark:text-white">
                             {acaoAtual === 'add'
                                 ? 'Registrando aluno...'
                                 : 'Excluindo aluno...'}
@@ -253,10 +256,10 @@ export default function TurmasScreen() {
             {/* SUCESSO */}
             <Modal visible={successVisible} transparent animationType="fade">
                 <View className="flex-1 bg-black/50 items-center justify-center">
-                    <View className="bg-white rounded-2xl p-6 items-center w-4/5">
+                    <View className="bg-white dark:bg-slate-900 rounded-2xl p-6 items-center w-4/5">
                         <CheckCircle size={48} color="#16a34a" />
-                        <Text className="text-lg font-bold mt-3">Sucesso!</Text>
-                        <Text className="text-sm text-gray-600 mt-1 text-center">
+                        <Text className="text-lg font-bold mt-3 text-gray-900 dark:text-white">Sucesso!</Text>
+                        <Text className="text-sm text-gray-600 dark:text-gray-400 mt-1 text-center">
                             {acaoAtual === 'add'
                                 ? 'Aluno registrado com sucesso'
                                 : 'Aluno excluído com sucesso'}
@@ -268,17 +271,17 @@ export default function TurmasScreen() {
             {/* CONFIRMAÇÃO EXCLUSÃO */}
             <Modal visible={confirmVisible} transparent animationType="fade">
                 <View className="flex-1 bg-black/50 justify-center px-6">
-                    <View className="bg-white rounded-2xl p-5">
-                        <Text className="text-lg font-bold mb-2">
+                    <View className="bg-white dark:bg-slate-900 rounded-2xl p-5">
+                        <Text className="text-lg font-bold mb-2 text-gray-900 dark:text-white">
                             Confirmar exclusão
                         </Text>
 
-                        <Text className="text-sm text-gray-600 mb-4">
+                        <Text className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                             Deseja excluir o aluno:
                         </Text>
 
-                        <View className="bg-gray-100 px-3 py-2 rounded-lg mb-6">
-                            <Text className="font-semibold text-center">
+                        <View className="bg-gray-100 dark:bg-slate-800 px-3 py-2 rounded-lg mb-6">
+                            <Text className="font-semibold text-center text-gray-900 dark:text-white">
                                 {nomeAlunoExcluir}
                             </Text>
                         </View>
@@ -289,9 +292,9 @@ export default function TurmasScreen() {
                                     setConfirmVisible(false);
                                     setNomeAlunoExcluir(null);
                                 }}
-                                className="flex-1 bg-gray-100 py-3 rounded-lg items-center"
+                                className="flex-1 bg-gray-100 dark:bg-slate-800 py-3 rounded-lg items-center"
                             >
-                                <Text>Cancelar</Text>
+                                <Text className="text-gray-700 dark:text-gray-300">Cancelar</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
