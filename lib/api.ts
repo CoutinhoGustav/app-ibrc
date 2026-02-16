@@ -231,6 +231,36 @@ export class ApiService {
     return api.get(`/registros/search?q=${query}`);
   }
 
+  // === BUSCA CEP (ViaCEP) ===
+
+  /**
+   * Busca dados de endereço através do CEP usando a API pública ViaCEP.
+   * Este é um exemplo de como consumir uma API REST externa que retorna JSON.
+   */
+  async buscarCep(cep: string) {
+    // Sanitiza o CEP (remove tudo que não for número)
+    const sanitizedCep = cep.replace(/\D/g, "");
+
+    if (sanitizedCep.length !== 8) {
+      throw new Error("CEP inválido. Deve conter 8 dígitos.");
+    }
+
+    try {
+      // Usamos uma nova instância do axios ou o axios direto para evitar 
+      // os interceptores da nossa 'api' (que adicionam Token de Auth e usam BaseURL diferente)
+      const response = await axios.get(`https://viacep.com.br/ws/${sanitizedCep}/json/`);
+
+      if (response.data.erro) {
+        throw new Error("CEP não encontrado.");
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      throw error;
+    }
+  }
+
   // ============================================
   // MOCK METHODS FOR TESTING
   // ============================================
