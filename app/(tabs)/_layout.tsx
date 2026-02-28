@@ -2,14 +2,11 @@ import { Redirect, Tabs } from 'expo-router';
 import { GraduationCap, Home, Settings } from 'lucide-react-native';
 import React from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
-  const insets = useSafeAreaInsets();
-
   return (
-    <View style={[styles.tabBarContainer, { bottom: Math.max(insets.bottom, 15) }]}>
+    <View style={styles.tabBarContainer}>
       <View style={styles.tabBar}>
         {state.routes.map((route: any, index: number) => {
           if (route.name === 'explore') return null;
@@ -119,10 +116,10 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBarContainer: {
     position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 30 : 20,
     left: 20,
     right: 20,
     alignItems: 'center',
-    zIndex: 1000,
   },
   tabBar: {
     flexDirection: 'row',
@@ -135,7 +132,7 @@ const styles = StyleSheet.create({
     width: '100%',
     ...Platform.select({
       ios: {
-        shadowColor: '#2563eb',
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
@@ -156,7 +153,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#2563eb', // azul vibrante da imagem
+    backgroundColor: '#2563eb', // Yellow vibrante da imagem
   },
   iconContainer: {
     alignItems: 'center',
