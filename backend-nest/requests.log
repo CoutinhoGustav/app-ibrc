@@ -627,3 +627,13 @@
 [2026-02-28T21:09:57.697Z] GET /api/turmas/Intermedi%C3%A1rios/alunos
 [2026-02-28T21:09:57.735Z] GET /api/turmas/Jovens/alunos
 [2026-02-28T21:09:57.767Z] GET /api/turmas/Adultos/alunos
+[2026-02-28T21:12:12.101Z] GET /api/registros?page=1&limit=100
+[2026-02-28T21:12:12.104Z] GET /api/turmas
+[2026-02-28T21:12:12.298Z] GET /api/turmas/Ber%C3%A7%C3%A1rio/alunos
+[2026-02-28T21:12:12.356Z] GET /api/turmas/Maternal/alunos
+[2026-02-28T21:12:12.391Z] GET /api/turmas/Prim%C3%A1rios/alunos
+[2026-02-28T21:12:12.413Z] GET /api/turmas/Principiantes/alunos
+[2026-02-28T21:12:12.438Z] GET /api/turmas/Juniores/alunos
+[2026-02-28T21:12:12.459Z] GET /api/turmas/Intermedi%C3%A1rios/alunos
+[2026-02-28T21:12:12.484Z] GET /api/turmas/Jovens/alunos
+[2026-02-28T21:12:12.508Z] GET /api/turmas/Adultos/alunos
