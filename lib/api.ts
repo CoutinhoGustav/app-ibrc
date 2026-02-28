@@ -6,8 +6,8 @@ import axios, { AxiosError, AxiosInstance } from "axios";
 // ============================================
 
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000/api";
-const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === "true" || true; // Default true for testing
+  process.env.EXPO_PUBLIC_API_URL || "http://192.168.0.60:3002/api";
+const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === "true"; // Defaults to false if not set or set to "false"
 
 interface ApiConfig {
   baseURL: string;
@@ -15,9 +15,12 @@ interface ApiConfig {
   useMock: boolean;
 }
 
+console.log("[DEBUG] API_BASE_URL:", API_BASE_URL);
+console.log("[DEBUG] USE_MOCK:", USE_MOCK);
+
 const config: ApiConfig = {
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000,
   useMock: USE_MOCK,
 };
 
@@ -30,6 +33,7 @@ const api: AxiosInstance = axios.create({
   timeout: config.timeout,
   headers: {
     "Content-Type": "application/json",
+    "Bypass-Tunnel-Reminder": "true", // Bypass localtunnel security warning page
   },
 });
 
@@ -39,6 +43,7 @@ const api: AxiosInstance = axios.create({
 
 api.interceptors.request.use(
   async (config) => {
+    console.log(`[AXIOS] Requesting: ${config.baseURL}${config.url}`);
     const token = await AsyncStorage.getItem("@auth_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -57,6 +62,11 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest: any = error.config;
 
+    // Skip interceptor for login requests
+    if (originalRequest.url?.includes("/auth/login")) {
+      return Promise.reject(error);
+    }
+
     // Handle 401 - Token expired, try refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
@@ -73,12 +83,13 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (err) {
-        // Refresh failed, clear storage and redirect to login
+        // Refresh failed, clear storage
         await AsyncStorage.removeItem("@auth_token");
         await AsyncStorage.removeItem("@refresh_token");
         await AsyncStorage.removeItem("@user");
-        // TODO: Navigate to login screen
-        return Promise.reject(err);
+
+        // Return original error so caller handles it
+        return Promise.reject(error);
       }
     }
 
@@ -103,132 +114,138 @@ export class ApiService {
     if (this.useMock) {
       return this.mockLogin(email, password);
     }
-    return api.post("/auth/login", { email, password });
+    return api.post("auth/login", { email, password });
   }
 
   async register(data: { name: string; email: string; password: string }) {
     if (this.useMock) {
       return this.mockRegister(data);
     }
-    return api.post("/auth/register", data);
+    return api.post("auth/register", data);
   }
 
   async refreshToken() {
     if (this.useMock) {
       return this.mockRefreshToken();
     }
-    return api.post("/auth/refresh");
+    return api.post("auth/refresh");
   }
 
   async logout() {
     if (this.useMock) {
       return this.mockLogout();
     }
-    return api.post("/auth/logout");
+    return api.post("auth/logout");
   }
 
   async getProfile() {
     if (this.useMock) {
       return this.mockGetProfile();
     }
-    return api.get("/auth/profile");
+    return api.get("auth/profile");
   }
 
   async updateProfile(data: any) {
     if (this.useMock) {
       return this.mockUpdateProfile(data);
     }
-    return api.patch("/auth/profile", data);
+    return api.patch("auth/profile", data);
   }
 
   // === TURMAS ENDPOINTS ===
 
   async getTurmas() {
-    if (this.useMock) {
-      return this.mockGetTurmas();
-    }
-    return api.get("/turmas");
+    if (this.useMock) return this.mockGetTurmas();
+    return api.get("turmas");
   }
 
   async getTurmaById(id: number) {
-    if (this.useMock) {
-      return this.mockGetTurmaById(id);
-    }
-    return api.get(`/turmas/${id}`);
+    if (this.useMock) return this.mockGetTurmaById(id);
+    return api.get(`turmas/${id}`);
   }
 
   // === ALUNOS ENDPOINTS ===
 
   async getAlunosByTurma(turmaId: number) {
-    if (this.useMock) {
-      return this.mockGetAlunosByTurma(turmaId);
-    }
-    return api.get(`/turmas/${turmaId}/alunos`);
+    if (this.useMock) return this.mockGetAlunosByTurma(turmaId);
+    return api.get(`turmas/${turmaId}/alunos`);
   }
 
   async createAluno(turmaId: number, data: any) {
-    if (this.useMock) {
-      return this.mockCreateAluno(turmaId, data);
-    }
-    return api.post(`/turmas/${turmaId}/alunos`, data);
+    if (this.useMock) return this.mockCreateAluno(turmaId, data);
+    return api.post(`turmas/${turmaId}/alunos`, data);
   }
 
-  async updateAluno(turmaId: number, alunoId: number, data: any) {
-    if (this.useMock) {
-      return this.mockUpdateAluno(turmaId, alunoId, data);
-    }
-    return api.patch(`/turmas/${turmaId}/alunos/${alunoId}`, data);
+  async updateAluno(turmaId: number, alunoId: string | number, data: any) {
+    if (this.useMock) return this.mockUpdateAluno(turmaId, alunoId as any, data);
+    return api.patch(`alunos/${alunoId}`, data);
   }
 
-  async deleteAluno(turmaId: number, alunoId: number) {
-    if (this.useMock) {
-      return this.mockDeleteAluno(turmaId, alunoId);
-    }
-    return api.delete(`/turmas/${turmaId}/alunos/${alunoId}`);
+  async deleteAluno(turmaId: number, alunoId: string | number) {
+    if (this.useMock) return this.mockDeleteAluno(turmaId, alunoId as any);
+    return api.delete(`alunos/${alunoId}`);
   }
 
   // === REGISTROS ENDPOINTS ===
 
   async getRegistros(page: number = 1, limit: number = 20) {
-    if (this.useMock) {
-      return this.mockGetRegistros(page, limit);
-    }
-    return api.get(`/registros?page=${page}&limit=${limit}`);
+    if (this.useMock) return this.mockGetRegistros(page, limit);
+    return api.get(`registros?page=${page}&limit=${limit}`);
   }
 
   async getRegistroById(id: string) {
-    if (this.useMock) {
-      return this.mockGetRegistroById(id);
-    }
-    return api.get(`/registros/${id}`);
+    if (this.useMock) return this.mockGetRegistroById(id);
+    return api.get(`registros/${id}`);
   }
 
   async createRegistro(data: any) {
-    if (this.useMock) {
-      return this.mockCreateRegistro(data);
-    }
-    return api.post("/registros", data);
+    if (this.useMock) return this.mockCreateRegistro(data);
+    return api.post("registros", data);
   }
 
   async updateRegistro(id: string, data: any) {
-    if (this.useMock) {
-      return this.mockUpdateRegistro(id, data);
-    }
-    return api.patch(`/registros/${id}`, data);
+    if (this.useMock) return this.mockUpdateRegistro(id, data);
+    return api.patch(`registros/${id}`, data);
   }
 
   async deleteRegistro(id: string) {
-    if (this.useMock) {
-      return this.mockDeleteRegistro(id);
-    }
-    return api.delete(`/registros/${id}`);
+    if (this.useMock) return this.mockDeleteRegistro(id);
+    return api.delete(`registros/${id}`);
   }
 
   async searchRegistros(query: string) {
-    if (this.useMock) {
-      return this.mockSearchRegistros(query);
+    if (this.useMock) return this.mockSearchRegistros(query);
+    return api.get(`registros/search?q=${query}`);
+  }
+
+  // === BUSCA CEP (ViaCEP) ===
+
+  /**
+   * Busca dados de endereço através do CEP usando a API pública ViaCEP.
+   * Este é um exemplo de como consumir uma API REST externa que retorna JSON.
+   */
+  async buscarCep(cep: string) {
+    // Sanitiza o CEP (remove tudo que não for número)
+    const sanitizedCep = cep.replace(/\D/g, "");
+
+    if (sanitizedCep.length !== 8) {
+      throw new Error("CEP inválido. Deve conter 8 dígitos.");
     }
-    return api.get(`/registros/search?q=${query}`);
+
+    try {
+      // Usamos uma nova instância do axios ou o axios direto para evitar 
+      // os interceptores da nossa 'api' (que adicionam Token de Auth e usam BaseURL diferente)
+      const response = await axios.get(`https://viacep.com.br/ws/${sanitizedCep}/json/`);
+
+      if (response.data.erro) {
+        throw new Error("CEP não encontrado.");
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+      throw error;
+    }
   }
 
   // ============================================

@@ -28,7 +28,7 @@ export default function LoginScreen() {
         setError(false);
         setLoading(true);
         try {
-            const success = await login(email, password);
+            const success = await login(email.trim(), password.trim());
             if (success) {
                 router.replace('/(tabs)' as any);
             } else {

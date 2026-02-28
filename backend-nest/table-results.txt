@@ -1,0 +1,19 @@
+﻿
+--- TABLE: students (Rows: 0) ---
+id (uuid), created_at (timestamp without time zone), name (character varying), status (character varying), type (character varying), registered_by (character varying)
+
+--- TABLE: Aluno (Rows: 66) ---
+id (uuid), created_at (timestamp without time zone), type (character varying), status (character varying), turma (character varying), registered_by (character varying), name (character varying)
+
+--- TABLE: registros (Does not exist or error) ---
+
+--- TABLE: Registro (Rows: 1) ---
+absent_students (jsonb), total (integer), present_students (jsonb), id (uuid), data_registro (date), presentes (integer), turma_name (character varying), professor_nome (character varying), visitantes (text)
+
+--- TABLE: Turma (Rows: 0) ---
+id (uuid), presentes (integer), total (integer), present_students (jsonb), absent_students (jsonb), ausentes (integer), recorded_by (character varying), turma (character varying), professor (character varying), data (character varying), visitantes (character varying)
+
+--- TABLE: admins (Does not exist or error) ---
+
+--- TABLE: User (Rows: 1) ---
+id (uuid), is_approved (boolean), created_at (timestamp without time zone), name (character varying), email (character varying), password (character varying), avatar (text), role (character varying)

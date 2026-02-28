@@ -3,9 +3,11 @@ import { Calendar, Plus, Users } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import {
   FlatList,
+  RefreshControl,
   Text,
   TextInput,
   TouchableOpacity,
+  Vibration,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,8 +23,22 @@ const normalizeString = (str: string) =>
     .toLowerCase();
 
 export default function HomeScreen() {
-  const { registros } = useData();
+  const { registros, refetchRegistros, refetchAlunos } = useData();
   const router = useRouter();
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([refetchRegistros(), refetchAlunos()]);
+      Vibration.vibrate(50);
+    } catch (error) {
+      console.error("Erro ao atualizar dados:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchRegistros, refetchAlunos]);
 
   const [search, setSearch] = useState("");
 
@@ -67,27 +83,27 @@ export default function HomeScreen() {
     <Card className="mb-3 p-3">
       <View className="flex-row justify-between items-start mb-2">
         <View className="flex-1">
-          <Text className="text-base font-bold text-gray-900">
+          <Text className="text-base font-bold text-gray-900 dark:text-white">
             {item.turma}
           </Text>
-          <Text className="text-gray-500 text-xs">Prof. {item.professor}</Text>
+          <Text className="text-gray-500 dark:text-gray-400 text-xs">Prof. {item.professor}</Text>
         </View>
-        <View className="bg-blue-100 px-2 py-1 rounded-full">
-          <Text className="text-blue-700 text-xs font-bold">
+        <View className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full">
+          <Text className="text-blue-700 dark:text-blue-400 text-xs font-bold">
             {item.presentes}/{item.total}
           </Text>
         </View>
       </View>
 
-      <View className="flex-row items-center mt-2 pt-2 border-t border-gray-50">
+      <View className="flex-row items-center mt-2 pt-2 border-t border-gray-50 dark:border-slate-800">
         <View className="flex-row items-center mr-3">
-          <Calendar size={12} color="#6b7280" />
-          <Text className="text-gray-500 text-xs ml-1">{item.data}</Text>
+          <Calendar size={12} color="#94a3b8" />
+          <Text className="text-gray-500 dark:text-gray-400 text-xs ml-1">{item.data}</Text>
         </View>
         <View className="flex-row items-center flex-1">
-          <Users size={12} color="#6b7280" />
+          <Users size={12} color="#94a3b8" />
           <Text
-            className="text-gray-500 text-xs ml-1 truncate"
+            className="text-gray-500 dark:text-gray-400 text-xs ml-1 truncate"
             numberOfLines={1}
           >
             {item.visitantes !== "-"
@@ -110,13 +126,13 @@ export default function HomeScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
       {/* HEADER */}
-      <View className="bg-white px-4 py-3 border-b border-gray-100">
+      <View className="bg-white dark:bg-slate-900 px-4 py-3 border-b border-gray-100 dark:border-slate-800">
         <View className="flex-row justify-between items-center mb-2">
           <View>
-            <Text className="text-xl font-black text-gray-900">IBRC</Text>
-            <Text className="text-xs text-gray-500 font-medium">
+            <Text className="text-xl font-black text-gray-900 dark:text-white">IBRC</Text>
+            <Text className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               Lista de Presenças
             </Text>
           </View>
@@ -131,9 +147,10 @@ export default function HomeScreen() {
         {/* CAMPO DE PESQUISA */}
         <TextInput
           placeholder="Pesquisar turma, professor, data ou ano..."
+          placeholderTextColor="#94a3b8"
           value={search}
           onChangeText={setSearch}
-          className="border border-gray-200 rounded-lg px-4 py-2 text-gray-900"
+          className="border border-gray-200 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white bg-white dark:bg-slate-800"
         />
       </View>
 
@@ -142,6 +159,17 @@ export default function HomeScreen() {
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={{ padding: 12 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#2563eb"]}
+            tintColor="#2563eb"
+          />
+        }
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center py-20">
             <Text className="text-gray-400 text-sm font-medium">

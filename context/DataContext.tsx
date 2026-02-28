@@ -18,8 +18,17 @@ interface RegistroISO extends Omit<Registro, "data"> {
   data: string; // YYYY-MM-DD (INTERNO)
 }
 
+interface AlunoEntry {
+  id: string;
+  nome: string;
+}
+
 interface AlunosData {
-  [key: string]: string[];
+  [key: string]: string[]; // nome dos alunos para exibição
+}
+
+interface AlunosIdMap {
+  [key: string]: AlunoEntry[]; // { id, nome } para CRUD
 }
 
 interface DataContextType {
@@ -50,181 +59,15 @@ const brToISO = (date: string): string => {
 };
 
 const isoToBR = (date: string): string => {
-  const match = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return date;
+  // Trata tanto "YYYY-MM-DD" quanto timestamps ISO completos "YYYY-MM-DDTHH:mm:ss..."
+  const match = date?.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return date || "";
   const [, year, month, day] = match;
   return `${day}/${month}/${year}`;
 };
 
 const normalizeForUI = (registros: RegistroISO[]): Registro[] =>
   registros.map((r) => ({ ...r, data: isoToBR(r.data) }));
-
-/* ================= DADOS PADRÃO ================= */
-
-const registrosDefaultISO: RegistroISO[] = [
-  {
-    id: 1,
-    turma: "Berçário",
-    professor: "Ana Paula",
-    data: "2023-10-15",
-    presentes: 1,
-    total: 5,
-    visitantes: "Laura Mendes",
-  },
-  {
-    id: 2,
-    turma: "Maternal",
-    professor: "Carla Souza",
-    data: "2023-10-15",
-    presentes: 3,
-    total: 3,
-    visitantes: "-",
-  },
-  {
-    id: 3,
-    turma: "Principiantes",
-    professor: "Rafael Lima",
-    data: "2023-10-15",
-    presentes: 7,
-    total: 7,
-    visitantes: "João Pedro",
-  },
-  {
-    id: 4,
-    turma: "Juniores",
-    professor: "Marcos Silva",
-    data: "2023-10-15",
-    presentes: 9,
-    total: 9,
-    visitantes: "-",
-  },
-  {
-    id: 5,
-    turma: "Intermediários",
-    professor: "Luciana Rocha",
-    data: "2023-10-15",
-    presentes: 10,
-    total: 10,
-    visitantes: "Carlos André",
-  },
-  {
-    id: 6,
-    turma: "Jovens",
-    professor: "João Paulo",
-    data: "2023-10-15",
-    presentes: 12,
-    total: 12,
-    visitantes: "-",
-  },
-  {
-    id: 7,
-    turma: "Adultos",
-    professor: "Maria Silva",
-    data: "2023-10-15",
-    presentes: 40,
-    total: 40,
-    visitantes: "Pedro Henrique",
-  },
-];
-
-const alunosDataDefault: AlunosData = {
-  Berçário: [
-    "Lucas Baby",
-    "Ana Clara",
-    "Miguelzinho",
-    "Helena Baby",
-    "Laura Mendes",
-  ].sort(),
-  Maternal: ["Joãozinho", "Mariana", "Davi"].sort(),
-  Principiantes: [
-    "Cauã Silva",
-    "Beatriz Santos",
-    "Daniel Oliveira",
-    "Enzo Gabriel",
-    "Helena Costa",
-    "Lucas Pereira",
-    "Ana Vitória",
-  ].sort(),
-  Juniores: [
-    "Pedro Lucas",
-    "Ana Júlia",
-    "Gustavo Lima",
-    "Larissa Rocha",
-    "Rafael Costa",
-    "Camila Dias",
-    "Fernando Souza",
-    "Isabela Martins",
-    "Thiago Alves",
-  ].sort(),
-  Intermediários: [
-    "Lucas Gabriel",
-    "Mariana Lima",
-    "Felipe Costa",
-    "Amanda Rocha",
-    "Bruno Silva",
-    "Juliana Souza",
-    "Renato Oliveira",
-    "Carla Pereira",
-    "Matheus Lima",
-    "Beatriz Fernandes",
-  ].sort(),
-  Jovens: [
-    "João Pedro",
-    "Camila Santos",
-    "Matheus Oliveira",
-    "Bianca Lima",
-    "Gustavo Henrique",
-    "Larissa Costa",
-    "Felipe Martins",
-    "Ana Beatriz",
-    "Lucas Souza",
-    "Carolina Dias",
-    "Rafael Almeida",
-    "Mariana Fernandes",
-  ].sort(),
-  Adultos: [
-    "Ricardo Alves",
-    "Teresa Cristina",
-    "Marcos Paulo",
-    "Juliana Nunes",
-    "Pedro Henrique",
-    "Fernanda Costa",
-    "Gabriel Oliveira",
-    "Mariana Silva",
-    "Lucas Santos",
-    "Patrícia Lima",
-    "Rafael Souza",
-    "Camila Fernandes",
-    "Eduardo Martins",
-    "Carla Almeida",
-    "Vinícius Rocha",
-    "Aline Dias",
-    "Daniela Pereira",
-    "Bruno Lima",
-    "Tatiane Costa",
-    "Felipe Santos",
-    "João Vitor",
-    "Amanda Lima",
-    "Carlos Henrique",
-    "Isabela Fernandes",
-    "Marcelo Souza",
-    "Juliana Costa",
-    "Thiago Oliveira",
-    "Larissa Almeida",
-    "Gabriela Martins",
-    "Rafael Dias",
-    "Natália Souza",
-    "Fernando Lima",
-    "Bianca Costa",
-    "Gustavo Fernandes",
-    "Carolina Silva",
-    "Renan Oliveira",
-    "Marina Santos",
-    "Lucas Martins",
-    "Patrícia Almeida",
-    "Pedro Silva",
-  ].sort(),
-};
 
 /* ================= PROVIDER ================= */
 
@@ -233,6 +76,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [registrosISO, setRegistrosISO] = useState<RegistroISO[]>([]);
   const [alunosData, setAlunosData] = useState<AlunosData>({});
+  const [alunosIdMap, setAlunosIdMap] = useState<AlunosIdMap>({}); // UUID map para CRUD
   const [turmaIdMap, setTurmaIdMap] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -251,39 +95,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
       const registrosRes = await apiService.getRegistros(1, 100);
       const registrosData = registrosRes.data.data || [];
 
-      // Converte para formato ISO interno
+      // Backend agora entrega: turmaName, professorNome, dataRegistro
       const registrosISO: RegistroISO[] = registrosData.map((r: any) => ({
         id: r.id,
-        turma: r.turmaName,
-        professor: r.professorNome,
-        data: r.dataRegistro, // Já vem em YYYY-MM-DD do backend
-        presentes: r.presentes,
-        total: r.total,
-        visitantes: r.visitantes,
+        turma: r.turmaName ?? r.turma ?? "",
+        professor: r.professorNome ?? r.professor ?? "",
+        data: r.dataRegistro ?? r.data ?? "",
+        presentes: r.presentes ?? 0,
+        total: r.total ?? 0,
+        visitantes: r.visitantes ?? "-",
       }));
       setRegistrosISO(registrosISO);
 
-      // Carrega alunos e constrói mapa de turmas
-      const turmasRes = await apiService.getTurmas();
-      const turmas = turmasRes.data.data || [];
-
-      const alunosObj: AlunosData = {};
-      const newTurmaIdMap: { [key: string]: number } = {};
-
-      for (const turma of turmas) {
-        newTurmaIdMap[turma.name] = turma.id;
-        try {
-          const alunosRes = await apiService.getAlunosByTurma(turma.id);
-          const alunos = alunosRes.data.data || [];
-          alunosObj[turma.name] = alunos
-            .map((a: any) => a.nome)
-            .sort((a, b) => a.localeCompare(b, "pt-BR"));
-        } catch (err) {
-          console.error(`Erro ao carregar alunos de ${turma.name}:`, err);
-        }
-      }
-      setTurmaIdMap(newTurmaIdMap);
-      setAlunosData(alunosObj);
+      // Carrega turmas e alunos
+      await loadAlunos();
     } catch (err: any) {
       const errorMsg = err.message || "Erro ao carregar dados";
       setError(errorMsg);
@@ -291,6 +116,44 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadAlunos = async () => {
+    const turmasRes = await apiService.getTurmas();
+    const turmas = turmasRes.data.data || [];
+
+    const alunosObj: AlunosData = {};
+    const idMapObj: AlunosIdMap = {};
+    const newTurmaIdMap: { [key: string]: number } = {};
+
+    for (const turma of turmas) {
+      newTurmaIdMap[turma.name] = turma.id;
+      try {
+        const alunosRes = await apiService.getAlunosByTurma(turma.id);
+        const alunos: AlunoEntry[] = (alunosRes.data.data || []).map((a: any) => ({
+          id: a.id,
+          nome: a.nome ?? a.name ?? "",
+        }));
+
+        // Para exibição: só os nomes ordenados
+        alunosObj[turma.name] = alunos
+          .map((a) => a.nome)
+          .sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+        // Para CRUD: lista com id + nome, também ordenada por nome
+        idMapObj[turma.name] = alunos.sort((a, b) =>
+          a.nome.localeCompare(b.nome, "pt-BR")
+        );
+      } catch (err) {
+        console.error(`Erro ao carregar alunos de ${turma.name}:`, err);
+        alunosObj[turma.name] = [];
+        idMapObj[turma.name] = [];
+      }
+    }
+
+    setTurmaIdMap(newTurmaIdMap);
+    setAlunosData(alunosObj);
+    setAlunosIdMap(idMapObj);
   };
 
   // ================= AUTO SAVE =================
@@ -306,12 +169,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const addRegistro = async (novoRegistro: Omit<Registro, "id">) => {
     try {
-      const response = await apiService.createRegistro({
-        ...novoRegistro,
-        data: brToISO(novoRegistro.data),
-      });
+      const payload = {
+        turmaName: novoRegistro.turma,
+        professorNome: novoRegistro.professor,
+        dataRegistro: brToISO(novoRegistro.data),
+        presentes: novoRegistro.presentes,
+        total: novoRegistro.total,
+        visitantes: novoRegistro.visitantes,
+      };
 
-      const newRegistro = {
+      const response = await apiService.createRegistro(payload);
+
+      const newRegistro: RegistroISO = {
         ...novoRegistro,
         id: response.data.data.id,
         data: brToISO(novoRegistro.data),
@@ -326,10 +195,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateRegistro = async (updatedRegistro: Registro) => {
     try {
-      await apiService.updateRegistro(updatedRegistro.id as number, {
-        ...updatedRegistro,
-        data: brToISO(updatedRegistro.data),
-      });
+      const payload = {
+        turmaName: updatedRegistro.turma,
+        professorNome: updatedRegistro.professor,
+        dataRegistro: brToISO(updatedRegistro.data),
+        presentes: updatedRegistro.presentes,
+        total: updatedRegistro.total,
+        visitantes: updatedRegistro.visitantes,
+      };
+
+      await apiService.updateRegistro(updatedRegistro.id as string, payload);
 
       setRegistrosISO((prev) =>
         prev.map((r) =>
@@ -346,9 +221,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const removeRegistro = async (id: string | number) => {
     try {
-      // Aceita tanto id numérico quanto string (útil para mock ids)
       await apiService.deleteRegistro(id as any);
-      // Faz a comparação convertendo para string para evitar problemas de tipo ("1" vs 1)
       setRegistrosISO((prev) =>
         prev.filter((r) => String(r.id) !== String(id)),
       );
@@ -360,12 +233,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getAlunosByTurma = (turma: string) => alunosData[turma] || [];
 
-  // Encontra turma ID por nome
   const getTurmaIdByName = (turmaName: string): number | null => {
     return turmaIdMap[turmaName] || null;
   };
 
-  // Ordena os alunos sempre que adiciona ou atualiza
   const addAluno = async (turma: string, nome: string) => {
     try {
       const turmaId = getTurmaIdByName(turma);
@@ -373,11 +244,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(`Turma "${turma}" não encontrada`);
       }
 
-      await apiService.createAluno(turmaId, { nome, ativo: true });
+      const response = await apiService.createAluno(turmaId, { nome, status: "ativo" });
+      const novoAluno: AlunoEntry = {
+        id: response.data.data.id,
+        nome,
+      };
 
       setAlunosData((prev) => {
         const lista = [...(prev[turma] || []), nome].sort((a, b) =>
           a.localeCompare(b, "pt-BR"),
+        );
+        return { ...prev, [turma]: lista };
+      });
+
+      setAlunosIdMap((prev) => {
+        const lista = [...(prev[turma] || []), novoAluno].sort((a, b) =>
+          a.nome.localeCompare(b.nome, "pt-BR"),
         );
         return { ...prev, [turma]: lista };
       });
@@ -394,12 +276,21 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(`Turma "${turma}" não encontrada`);
       }
 
-      const alunoAtual = alunosData[turma]?.[index];
-      if (!alunoAtual) {
+      // Busca o UUID do aluno pelo índice no mapa ordenado
+      const alunoEntry = alunosIdMap[turma]?.[index];
+      if (!alunoEntry) {
         throw new Error("Aluno não encontrado");
       }
 
-      await apiService.updateAluno(turmaId, alunoAtual, { nome, ativo: true });
+      // Passa o UUID real para a API (PATCH /alunos/:uuid)
+      await apiService.updateAluno(turmaId, alunoEntry.id, { nome, status: "ativo" });
+
+      setAlunosIdMap((prev) => {
+        const lista = [...(prev[turma] || [])];
+        lista[index] = { ...lista[index], nome };
+        lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+        return { ...prev, [turma]: lista };
+      });
 
       setAlunosData((prev) => {
         const lista = [...(prev[turma] || [])];
@@ -420,12 +311,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(`Turma "${turma}" não encontrada`);
       }
 
-      const alunoParaRemover = alunosData[turma]?.[index];
-      if (!alunoParaRemover) {
+      // Busca o UUID do aluno pelo índice no mapa ordenado
+      const alunoEntry = alunosIdMap[turma]?.[index];
+      if (!alunoEntry) {
         throw new Error("Aluno não encontrado");
       }
 
-      await apiService.deleteAluno(turmaId, alunoParaRemover);
+      // Passa o UUID real para a API (DELETE /alunos/:uuid)
+      await apiService.deleteAluno(turmaId, alunoEntry.id);
+
+      setAlunosIdMap((prev) => {
+        const lista = [...(prev[turma] || [])];
+        lista.splice(index, 1);
+        return { ...prev, [turma]: lista };
+      });
 
       setAlunosData((prev) => {
         const lista = [...(prev[turma] || [])];
@@ -447,12 +346,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const registrosISO: RegistroISO[] = registrosData.map((r: any) => ({
         id: r.id,
-        turma: r.turmaName,
-        professor: r.professorNome,
-        data: r.dataRegistro,
-        presentes: r.presentes,
-        total: r.total,
-        visitantes: r.visitantes,
+        turma: r.turmaName ?? r.turma ?? "",
+        professor: r.professorNome ?? r.professor ?? "",
+        data: r.dataRegistro ?? r.data ?? "",
+        presentes: r.presentes ?? 0,
+        total: r.total ?? 0,
+        visitantes: r.visitantes ?? "-",
       }));
       setRegistrosISO(registrosISO);
     } catch (err: any) {
@@ -465,26 +364,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
   const refetchAlunos = async () => {
     try {
       setLoading(true);
-      const turmasRes = await apiService.getTurmas();
-      const turmas = turmasRes.data.data || [];
-
-      const alunosObj: AlunosData = {};
-      const newTurmaIdMap: { [key: string]: number } = {};
-
-      for (const turma of turmas) {
-        newTurmaIdMap[turma.name] = turma.id;
-        try {
-          const alunosRes = await apiService.getAlunosByTurma(turma.id);
-          const alunos = alunosRes.data.data || [];
-          alunosObj[turma.name] = alunos
-            .map((a: any) => a.nome)
-            .sort((a, b) => a.localeCompare(b, "pt-BR"));
-        } catch (err) {
-          console.error(`Erro ao carregar alunos de ${turma.name}:`, err);
-        }
-      }
-      setTurmaIdMap(newTurmaIdMap);
-      setAlunosData(alunosObj);
+      await loadAlunos();
     } catch (err: any) {
       console.error("Erro ao atualizar alunos:", err);
     } finally {

@@ -18,17 +18,17 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
     const variants = {
         primary: 'bg-blue-600',
-        secondary: 'bg-gray-200',
-        outline: 'border border-gray-300 bg-transparent',
+        secondary: 'bg-gray-200 dark:bg-slate-800',
+        outline: 'border border-gray-300 dark:border-slate-700 bg-transparent',
         ghost: 'bg-transparent',
         danger: 'bg-red-600',
     };
 
     const textVariants = {
         primary: 'text-white',
-        secondary: 'text-gray-900',
-        outline: 'text-gray-900',
-        ghost: 'text-gray-900',
+        secondary: 'text-gray-900 dark:text-gray-100',
+        outline: 'text-gray-900 dark:text-gray-100',
+        ghost: 'text-gray-900 dark:text-gray-100',
         danger: 'text-white',
     };
 
