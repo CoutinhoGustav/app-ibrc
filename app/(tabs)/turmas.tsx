@@ -24,10 +24,23 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
+
+// =====================
+// CONSTANTES
+// =====================
+const TURMAS_PERMITIDAS = [
+    'Berçário',
+    'Maternal',
+    'Primários',
+    'Principiantes',
+    'Juniores',
+    'Intermediários',
+    'Jovens',
+    'Adultos',
+];
 
 // =====================
 // COMPONENTE CARD DE RESUMO
@@ -113,7 +126,7 @@ export default function TurmasScreen() {
     // FILTRAGEM DE REGISTROS
     // =====================
     const registrosFiltrados = useMemo(() => {
-        let filtered = registros;
+        let filtered = registros || [];
 
         // filtra por data
         if (dataFiltro) {
@@ -173,13 +186,16 @@ export default function TurmasScreen() {
     const resumoGeral = useMemo(() => calcularResumo(registrosFiltrados), [registrosFiltrados]);
 
     const resumoPorTurma = useMemo(() => {
-        return Object.keys(alunosData).map(turma => {
-            const registrosTurma = registrosFiltrados.filter((r: any) => r.turma === turma);
-            return {
-                turma,
-                ...calcularResumo(registrosTurma)
-            };
-        });
+        const baseRegistros = registrosFiltrados || [];
+        return TURMAS_PERMITIDAS
+            .filter(turma => alunosData && alunosData[turma])
+            .map(turma => {
+                const registrosTurma = baseRegistros.filter((r: any) => r && r.turma === turma);
+                return {
+                    turma,
+                    ...calcularResumo(registrosTurma)
+                };
+            });
     }, [alunosData, registrosFiltrados]);
 
     // ===== EXCLUSÃO =====
@@ -192,25 +208,15 @@ export default function TurmasScreen() {
     const [successVisible, setSuccessVisible] = useState(false);
     const [acaoAtual, setAcaoAtual] = useState<'add' | 'delete'>('add');
 
-    const TURMAS_PERMITIDAS = [
-        'Berçário',
-        'Maternal',
-        'Primários',
-        'Principiantes',
-        'Juniores',
-        'Intermediários',
-        'Jovens',
-        'Adultos',
-    ];
 
     const turmas = TURMAS_PERMITIDAS
-        .filter(turma => alunosData[turma])
+        .filter(turma => alunosData && alunosData[turma])
         .map(turma => {
-            const record = registros.find(r => r.turma === turma);
+            const record = (registros || []).find(r => r.turma === turma);
             return {
                 name: turma,
                 professor: record ? record.professor : 'Não atribuído',
-                totalAlunos: alunosData[turma].length
+                totalAlunos: alunosData ? alunosData[turma].length : 0
             };
         });
 
@@ -245,9 +251,9 @@ export default function TurmasScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
+        <SafeAreaView edges={['bottom', 'left', 'right']} className="flex-1 bg-gray-50 dark:bg-slate-950">
             {/* NOVO HEADER COM ABAS */}
-            <View className="bg-white dark:bg-slate-900 px-6 py-5 border-b border-gray-100 dark:border-slate-800 flex-row justify-between items-center">
+            <View className="bg-white dark:bg-slate-900 px-6 pt-12 pb-5 border-b border-gray-100 dark:border-slate-800 flex-row justify-between items-center">
                 <View className="flex-1">
                     <Text className="text-2xl font-black text-gray-900 dark:text-white">Turmas</Text>
                     <Text className="text-[10px] text-gray-500 dark:text-gray-400">
@@ -276,7 +282,7 @@ export default function TurmasScreen() {
                 <FlatList
                     data={turmas}
                     keyExtractor={item => item.name}
-                    contentContainerStyle={{ padding: 12 }}
+                    contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
@@ -286,62 +292,72 @@ export default function TurmasScreen() {
                         />
                     }
                     renderItem={({ item }) => (
-                        <Card className="mb-3">
+                        <Card className="mb-4 overflow-hidden border-0 shadow-md">
                             <TouchableOpacity
+                                activeOpacity={0.7}
                                 onPress={() =>
                                     setSelectedTurma(item.name === selectedTurma ? null : item.name)
                                 }
                             >
-                                <View className="flex-row justify-between items-center p-3">
-                                    <View className="flex-row items-center">
-                                        <View className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl items-center justify-center mr-3">
-                                            <GraduationCap size={20} color="#2563eb" />
+                                <View className={`flex-row justify-between items-center p-4 ${selectedTurma === item.name ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}>
+                                    <View className="flex-row items-center flex-1">
+                                        <View className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl items-center justify-center mr-4">
+                                            <GraduationCap size={24} color="#2563eb" />
                                         </View>
-                                        <View>
-                                            <Text className="font-bold text-gray-900 dark:text-white">{item.name}</Text>
-                                            <Text className="text-xs text-gray-500 dark:text-gray-400">
+                                        <View className="flex-1">
+                                            <Text className="text-lg font-bold text-gray-900 dark:text-white leading-tight">{item.name}</Text>
+                                            <Text className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                                 Prof. {item.professor}
                                             </Text>
                                         </View>
                                     </View>
 
-                                    <ChevronRight
-                                        size={18}
-                                        color="#9ca3af"
-                                        style={{
-                                            transform: [
-                                                { rotate: selectedTurma === item.name ? '90deg' : '0deg' }
-                                            ]
-                                        }}
-                                    />
+                                    <View className="flex-row items-center">
+                                        <View className="bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg mr-3">
+                                            <Text className="text-[10px] font-bold text-gray-600 dark:text-gray-300">{item.totalAlunos} Alunos</Text>
+                                        </View>
+                                        <ChevronRight
+                                            size={20}
+                                            color="#9ca3af"
+                                            style={{
+                                                transform: [
+                                                    { rotate: selectedTurma === item.name ? '90deg' : '0deg' }
+                                                ]
+                                            }}
+                                        />
+                                    </View>
                                 </View>
 
                                 {selectedTurma === item.name && (
-                                    <View className="px-3 pb-3 pt-2 border-t border-gray-100 dark:border-slate-800">
-                                        <View className="flex-row justify-between items-center mb-2">
-                                            <Text className="text-xs font-bold text-gray-900 dark:text-white">
-                                                Alunos ({item.totalAlunos})
+                                    <View className="px-4 pb-4 pt-2 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800">
+                                        <View className="flex-row justify-between items-center mb-3">
+                                            <Text className="text-[11px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                                                Lista de Chamada
                                             </Text>
                                         </View>
 
-                                        <View className="flex-row flex-wrap gap-2">
+                                        <View className="flex-row flex-wrap gap-2 mb-4">
                                             {alunosData[item.name].map((aluno, index) => (
                                                 <View
                                                     key={index}
-                                                    className="bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full"
+                                                    className="bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-800 px-3 py-1.5 rounded-xl flex-row items-center"
                                                 >
-                                                    <Text className="text-xs text-gray-700 dark:text-gray-300">{aluno}</Text>
+                                                    <View className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-2" />
+                                                    <Text className="text-xs font-medium text-gray-700 dark:text-gray-300">{aluno}</Text>
                                                 </View>
                                             ))}
+                                            {alunosData[item.name].length === 0 && (
+                                                <Text className="text-xs italic text-gray-400 py-2">Nenhum aluno cadastrado</Text>
+                                            )}
                                         </View>
 
-                                        <Button
-                                            variant="outline"
-                                            className="mt-4 h-12"
+                                        <TouchableOpacity
                                             onPress={() => abrirModal(item.name)}
+                                            className="bg-blue-600 dark:bg-blue-700 py-3.5 rounded-2xl items-center justify-center flex-row shadow-sm shadow-blue-200"
                                         >
-                                            Gerenciar Alunos
-                                        </Button>
+                                            <Pencil size={16} color="#fff" />
+                                            <Text className="text-white font-bold ml-2">Gerenciar Turma</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 )}
                             </TouchableOpacity>
@@ -354,7 +370,7 @@ export default function TurmasScreen() {
             {activeTab === 'relatorio' && (
                 <ScrollView
                     className="flex-1 p-4"
-                    contentContainerStyle={{ paddingBottom: 20 }}
+                    contentContainerStyle={{ paddingBottom: 100 }}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}

@@ -35,9 +35,9 @@ export class TurmasService {
             .select('DISTINCT aluno.turma', 'name')
             .getRawMany();
 
-        // Collect class names from Registro table
-        const registroTurmas = await this.repository.manager.createQueryBuilder('Registro', 'r')
-            .select('DISTINCT r.turma_name', 'name')
+        // Collect class names from Turma table (which stores the records)
+        const registroTurmas = await this.repository.createQueryBuilder('t')
+            .select('DISTINCT t.turma', 'name')
             .getRawMany();
 
         // Merge and clean up

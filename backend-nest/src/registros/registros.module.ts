@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Registro } from './entities/registro.entity';
+import { Turma } from '../turmas/entities/turma.entity';
 import { RegistrosController } from './registros.controller';
 import { RegistrosService } from './registros.service';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Registro])],
+    imports: [TypeOrmModule.forFeature([Turma])],
     controllers: [RegistrosController],
     providers: [RegistrosService],
 })

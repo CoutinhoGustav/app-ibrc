@@ -21,6 +21,8 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   updateUser: (newData: Partial<User>) => Promise<void>;
   updateAvatar: (uri: string) => Promise<void>;
+  removeAvatar: () => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   deleteAccount: () => Promise<void>;
   loading: boolean;
   error: string | null;
@@ -123,20 +125,24 @@ export const AuthProvider: React.FC<{
     ========================= */
 
   const updateUser = async (newData: Partial<User>) => {
-    setLoading(true);
     try {
       const response = await apiService.updateProfile(newData);
-      const updatedUser = response.data.data;
+      const updatedUser = response.data?.data || response.data;
 
-      await AsyncStorage.setItem("@user", JSON.stringify(updatedUser));
-      setUser(updatedUser);
+      if (!updatedUser) {
+        throw new Error("Dados de usuário não retornados pela API");
+      }
+
+      // Merge com dados atuais para garantir que não percamos campos
+      const fullUser = { ...user, ...updatedUser };
+
+      await AsyncStorage.setItem("@user", JSON.stringify(fullUser));
+      setUser(fullUser);
     } catch (err: any) {
       const errorMsg =
         err.response?.data?.message || "Erro ao atualizar perfil";
       setError(errorMsg);
       console.error("Update user error:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -146,6 +152,31 @@ export const AuthProvider: React.FC<{
 
   const updateAvatar = async (uri: string) => {
     await updateUser({ avatar: uri });
+  };
+
+  const removeAvatar = async () => {
+    await updateUser({ avatar: "" });
+  };
+
+  /* =========================
+       CHANGE PASSWORD
+    ========================= */
+
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+    if (!user?.email) return false;
+    try {
+      await apiService.updatePassword({
+        email: user.email,
+        currentPassword,
+        newPassword
+      });
+      return true;
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || "Erro ao atualizar senha";
+      setError(errorMsg);
+      console.error("Change password error:", err);
+      return false;
+    }
   };
 
   /* =========================
@@ -182,6 +213,8 @@ export const AuthProvider: React.FC<{
         logout,
         updateUser,
         updateAvatar,
+        removeAvatar,
+        changePassword,
         deleteAccount,
         loading,
         error,

@@ -152,6 +152,13 @@ export class ApiService {
     return api.patch("auth/profile", data);
   }
 
+  async updatePassword(data: any) {
+    if (this.useMock) {
+      return this.mockUpdatePassword(data);
+    }
+    return api.put("auth/password", data);
+  }
+
   // === TURMAS ENDPOINTS ===
 
   async getTurmas() {
@@ -328,6 +335,16 @@ export class ApiService {
       data: {
         success: true,
         data,
+      },
+    });
+  }
+
+  private async mockUpdatePassword(data: any) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return Promise.resolve({
+      data: {
+        success: true,
+        message: "Senha alterada com sucesso!",
       },
     });
   }

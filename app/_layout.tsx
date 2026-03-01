@@ -3,10 +3,12 @@ import {
   DefaultTheme,
   ThemeProvider as NavThemeProvider,
 } from '@react-navigation/native';
+import * as NavigationBar from 'expo-navigation-bar';
 import { Stack, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme as useNativeWind } from 'nativewind';
 import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
 import 'react-native-reanimated';
 import '../global.css';
 
@@ -69,6 +71,21 @@ function RootLayoutContent() {
     }
   }, [segments, userTheme, colorScheme]);
 
+  // Efeito para modo imersivo (esconder barra de navegação no Android)
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      const setImmersiveMode = async () => {
+        try {
+          await NavigationBar.setVisibilityAsync('hidden');
+          await NavigationBar.setBehaviorAsync('overlay-swipe');
+        } catch (e) {
+          console.log('Erro ao definir modo imersivo:', e);
+        }
+      };
+      setImmersiveMode();
+    }
+  }, []);
+
   // Para o ThemeProvider do React Navigation e para o StatusBar, 
   // usamos uma lógica similar para evitar flashes ou inconsistências
   const isInTabs = segments[0] === '(tabs)';
@@ -103,7 +120,7 @@ function RootLayoutContent() {
         />
       </Stack>
 
-      <StatusBar style={statusBarStyle} />
+      <StatusBar hidden />
     </NavThemeProvider>
   );
 }

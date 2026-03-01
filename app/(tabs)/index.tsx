@@ -126,9 +126,9 @@ export default function HomeScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-slate-950">
+    <SafeAreaView edges={['bottom', 'left', 'right']} className="flex-1 bg-gray-50 dark:bg-slate-950">
       {/* HEADER */}
-      <View className="bg-white dark:bg-slate-900 px-4 py-3 border-b border-gray-100 dark:border-slate-800">
+      <View className="bg-white dark:bg-slate-900 px-4 pt-10 pb-3 border-b border-gray-100 dark:border-slate-800">
         <View className="flex-row justify-between items-center mb-2">
           <View>
             <Text className="text-xl font-black text-gray-900 dark:text-white">IBRC</Text>
