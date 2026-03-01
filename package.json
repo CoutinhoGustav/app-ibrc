@@ -8,7 +8,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "backend:local": "node scripts/network-config.js --local",
+    "backend:tunnel": "node scripts/network-config.js --tunnel"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -52,6 +54,8 @@
     "@types/react-native": "^0.72.8",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "ip": "^2.0.1",
+    "localtunnel": "^2.0.2",
     "metro-config": "^0.83.3",
     "typescript": "~5.9.2"
   },

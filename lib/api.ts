@@ -6,7 +6,7 @@ import axios, { AxiosError, AxiosInstance } from "axios";
 // ============================================
 
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || "http://192.168.0.60:3002/api";
+  process.env.EXPO_PUBLIC_API_URL || "http://localhost:3002/api/";
 const USE_MOCK = process.env.EXPO_PUBLIC_USE_MOCK === "true"; // Defaults to false if not set or set to "false"
 
 interface ApiConfig {
